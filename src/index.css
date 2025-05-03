@@ -1,0 +1,21 @@
+/* Base styles with Poppins font */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f5f5f5;
+  color: #4A4A4A;
+  min-height: 100vh;
+}
+
+/* Ensure all elements use Poppins */
+* {
+  font-family: 'Poppins', sans-serif;
+  box-sizing: border-box;
+}
+
+/* Remove default link styling */
+a {
+  text-decoration: none;
+  color: inherit;
+}
