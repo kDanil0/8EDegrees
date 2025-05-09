@@ -1,5 +1,10 @@
 import api from './api';
-import { ENDPOINTS } from '../../config/api';
+import { 
+  ENDPOINTS, 
+  getTransactionHistoryEndpoint, 
+  getTransactionRefundEndpoint, 
+  getTransactionCancelEndpoint 
+} from '../../config/api';
 
 export const accountingService = {
   // Reports
@@ -131,6 +136,47 @@ export const accountingService = {
       return response.data;
     } catch (error) {
       console.error('Update cash drawer operations error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Transaction History Management
+  getTransactions: async (filters = {}) => {
+    try {
+      const response = await api.get(ENDPOINTS.TRANSACTION_HISTORY, { params: filters });
+      return response.data;
+    } catch (error) {
+      console.error('Get transactions error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  getTransaction: async (id) => {
+    try {
+      const response = await api.get(getTransactionHistoryEndpoint(id));
+      return response.data;
+    } catch (error) {
+      console.error(`Get transaction ${id} error:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  refundTransaction: async (id, data) => {
+    try {
+      const response = await api.post(getTransactionRefundEndpoint(id), data);
+      return response.data;
+    } catch (error) {
+      console.error(`Refund transaction ${id} error:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  cancelTransaction: async (id, data) => {
+    try {
+      const response = await api.post(getTransactionCancelEndpoint(id), data);
+      return response.data;
+    } catch (error) {
+      console.error(`Cancel transaction ${id} error:`, error.response?.data || error.message);
       throw error;
     }
   }

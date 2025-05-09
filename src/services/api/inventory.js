@@ -53,6 +53,26 @@ export const inventoryService = {
     }
   },
 
+  getDeletedProducts: async () => {
+    try {
+      const response = await api.get(`${ENDPOINTS.PRODUCTS}/deleted`);
+      return response.data;
+    } catch (error) {
+      console.error('Get deleted products error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  restoreProduct: async (id) => {
+    try {
+      const response = await api.post(`${ENDPOINTS.PRODUCTS}/${id}/restore`);
+      return response.data;
+    } catch (error) {
+      console.error(`Restore product ${id} error:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
   // Categories
   getCategories: async () => {
     try {

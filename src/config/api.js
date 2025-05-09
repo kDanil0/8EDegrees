@@ -56,6 +56,7 @@ export const ENDPOINTS = {
   SALES_BY_PRODUCT: `${API_BASE_URL}/api/accounting/reports/sales-by-product`,
   SALES_SUMMARY: `${API_BASE_URL}/api/accounting/reports/sales/summary`,
   CASH_DRAWER: `${API_BASE_URL}/api/accounting/cash-drawer`,
+  TRANSACTION_HISTORY: `${API_BASE_URL}/api/accounting/transactions`,
 };
 
 // Helper function to get product endpoint with ID
@@ -78,6 +79,15 @@ export const getPurchaseOrderDiscrepanciesEndpoint = (id) => `${getPurchaseOrder
 
 // Helper function to get transaction endpoint with ID
 export const getTransactionEndpoint = (id) => `${ENDPOINTS.TRANSACTIONS}/${id}`;
+
+// Helper function to get accounting transaction history endpoint with ID
+export const getTransactionHistoryEndpoint = (id) => `${ENDPOINTS.TRANSACTION_HISTORY}/${id}`;
+
+// Helper function to get transaction refund endpoint
+export const getTransactionRefundEndpoint = (id) => `${getTransactionHistoryEndpoint(id)}/refund`;
+
+// Helper function to get transaction cancel endpoint
+export const getTransactionCancelEndpoint = (id) => `${getTransactionHistoryEndpoint(id)}/cancel`;
 
 // Helper function to get customer endpoint with ID
 export const getCustomerEndpoint = (id) => `${ENDPOINTS.CUSTOMERS}/${id}`;
@@ -104,6 +114,9 @@ export default {
   getPurchaseOrderReceiveEndpoint,
   getPurchaseOrderDiscrepanciesEndpoint,
   getTransactionEndpoint,
+  getTransactionHistoryEndpoint,
+  getTransactionRefundEndpoint,
+  getTransactionCancelEndpoint,
   getCustomerEndpoint,
   getAvailableRewardsEndpoint,
   getRedeemRewardEndpoint,

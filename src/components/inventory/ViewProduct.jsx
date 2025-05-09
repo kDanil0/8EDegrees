@@ -216,16 +216,17 @@ const ViewProduct = ({ onClose, refresh }) => {
     console.log("Deleting product:", product);
 
     try {
-      // Delete via API
+      // Delete via API - now uses soft delete on the backend
       await inventoryService.deleteProduct(product.id);
-      fetchProducts(); // Refresh the product list
+
+      // Close the modal if it's open
       setDetailsModalOpen(false);
+
+      // Refresh the product list to get updated data
+      fetchProducts();
     } catch (error) {
       console.error("Error deleting product:", error);
-      // Still update the UI even if API fails (for development)
-      const updatedProducts = products.filter((p) => p.id !== product.id);
-      setProducts(updatedProducts);
-      setFilteredProducts(updatedProducts);
+      setError("Failed to delete product. Please try again.");
       setDetailsModalOpen(false);
     }
   };
