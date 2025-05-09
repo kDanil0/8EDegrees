@@ -123,24 +123,30 @@ export default function PosPage() {
 
   // Cart handlers
   const handleAddToCart = (product) => {
-    const existingItem = cartItems.find(
-      (item) => item.product_id === product.id
+    // Check if this is a regular product that happens to be the same as a free item
+    // We should never auto-increment the free item - that is strictly from the reward
+    const existingRegularItem = cartItems.find(
+      (item) => item.product_id === product.id && !item.is_free_item
+    );
+
+    const existingFreeItem = cartItems.find(
+      (item) => item.product_id === product.id && item.is_free_item
     );
 
     // Get the price from either sellingPrice or price field
     const productPrice = product.sellingPrice || product.price;
 
-    if (existingItem) {
-      // Update quantity if item already exists
+    if (existingRegularItem) {
+      // Update quantity if a regular item already exists
       setCartItems((prevItems) =>
         prevItems.map((item) =>
-          item.product_id === product.id
+          item.product_id === product.id && !item.is_free_item
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
       );
     } else {
-      // Add new item to cart
+      // Add new regular item to cart - never add as free even if there's a free version
       setCartItems((prevItems) => [
         ...prevItems,
         {
@@ -149,6 +155,7 @@ export default function PosPage() {
           price: productPrice,
           quantity: 1,
           discount: 0,
+          is_free_item: false, // Explicitly mark as NOT free
         },
       ]);
 
@@ -156,28 +163,47 @@ export default function PosPage() {
     }
   };
 
-  const handleRemoveFromCart = (productId) => {
+  const handleRemoveFromCart = (productId, itemId) => {
+    // For free items, we check both product ID and the specific item ID
+    // For regular items, we just check the product ID
+    const isFreeItem = cartItems.some(
+      (item) =>
+        item.product_id === productId &&
+        item.is_free_item &&
+        (itemId ? item.free_item_id === itemId : true)
+    );
+
+    // Don't allow removing free items directly
+    if (isFreeItem) {
+      showNotification(
+        "To remove a free item, please remove the reward first",
+        "info"
+      );
+      return;
+    }
+
     const existingItem = cartItems.find(
-      (item) => item.product_id === productId
+      (item) => item.product_id === productId && !item.is_free_item
     );
 
     if (existingItem && existingItem.quantity > 1) {
       // Decrease quantity if more than 1
       setCartItems((prevItems) =>
         prevItems.map((item) =>
-          item.product_id === productId
+          item.product_id === productId && !item.is_free_item
             ? { ...item, quantity: item.quantity - 1 }
             : item
         )
       );
-    } else {
+    } else if (existingItem) {
       // Remove item completely if quantity is 1
       setCartItems((prevItems) =>
-        prevItems.filter((item) => item.product_id !== productId)
+        prevItems.filter(
+          (item) => !(item.product_id === productId && !item.is_free_item)
+        )
       );
 
-      const itemName = existingItem ? existingItem.name : "Item";
-      showNotification(`Removed ${itemName} from cart`, "info");
+      showNotification(`Removed ${existingItem.name} from cart`, "info");
     }
   };
 
@@ -268,6 +294,33 @@ export default function PosPage() {
   const handleApplyReward = (reward) => {
     setAppliedReward(reward);
     setRewardsDialogOpen(false);
+
+    // If it's a free item reward, add the free item to the cart
+    if (reward.type === "free_item" && reward.product) {
+      // Generate a unique ID for the free item to distinguish it from regular items
+      const freeItemId = `free-${reward.product.id}-${Date.now()}`;
+
+      // Check if we already have a free item from this reward
+      const existingFreeItem = cartItems.find(
+        (item) => item.is_free_item && item.product_id === reward.product.id
+      );
+
+      // Only add if we don't already have a free item for this product
+      if (!existingFreeItem) {
+        setCartItems((prevItems) => [
+          ...prevItems,
+          {
+            product_id: reward.product.id,
+            name: reward.product.name,
+            price: reward.product.price,
+            quantity: 1,
+            discount: reward.product.price, // Full discount
+            is_free_item: true,
+            free_item_id: freeItemId, // Add a unique ID to identify this specific free item
+          },
+        ]);
+      }
+    }
 
     showNotification(`Reward applied: ${reward.name}`, "success");
   };
@@ -465,14 +518,28 @@ export default function PosPage() {
 
   // Calculate totals
   const calculateSubtotal = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
+    // Only consider non-free items for the subtotal
+    return cartItems
+      .filter((item) => !item.is_free_item)
+      .reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
   const calculateDiscount = () => {
-    return appliedReward ? appliedReward.pointsNeeded : 0;
+    if (!appliedReward) return 0;
+
+    // For free items, we don't apply a direct discount since the free item
+    // is added to the cart separately with 100% discount
+    if (appliedReward.type === "free_item") {
+      return 0;
+    }
+
+    // For percentage discounts, calculate based on subtotal
+    if (appliedReward.type === "percentage_discount") {
+      return calculateSubtotal() * (appliedReward.value / 100);
+    }
+
+    // Legacy fixed-amount discount (fallback for old rewards)
+    return appliedReward.pointsNeeded;
   };
 
   const calculateTotal = () => {
@@ -489,6 +556,21 @@ export default function PosPage() {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleRemoveReward = () => {
+    if (appliedReward) {
+      // If it's a free item reward, also remove the free item from the cart
+      if (appliedReward.type === "free_item" && appliedReward.product) {
+        setCartItems((prevItems) =>
+          prevItems.filter((item) => !item.is_free_item)
+        );
+      }
+
+      // Clear the applied reward
+      setAppliedReward(null);
+      showNotification("Reward removed", "info");
+    }
   };
 
   return (
@@ -613,6 +695,7 @@ export default function PosPage() {
             selectedDiscount={selectedDiscount}
             onDiscountChange={handleDiscountChange}
             calculateDiscountAmount={calculateDiscountAmount}
+            onRemoveReward={handleRemoveReward}
           />
         </Box>
       </Box>

@@ -57,6 +57,7 @@ const CartSummary = ({
   selectedDiscount,
   onDiscountChange,
   calculateDiscountAmount,
+  onRemoveReward,
 }) => {
   // Calculate the total discount amount (reward + percentage discount)
   const totalDiscountAmount = appliedReward ? calculateDiscount() : 0;
@@ -92,7 +93,10 @@ const CartSummary = ({
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <IconButton
                       edge="end"
-                      onClick={() => onRemoveItem(item.product_id)}
+                      onClick={() =>
+                        onRemoveItem(item.product_id, item.free_item_id)
+                      }
+                      disabled={item.is_free_item}
                     >
                       <RemoveIcon />
                     </IconButton>
@@ -106,6 +110,7 @@ const CartSummary = ({
                           sellingPrice: item.price,
                         })
                       }
+                      disabled={item.is_free_item}
                     >
                       <AddIcon />
                     </IconButton>
@@ -113,10 +118,38 @@ const CartSummary = ({
                 }
               >
                 <ListItemText
-                  primary={item.name}
-                  secondary={`₱${item.price.toFixed(2)} x ${
-                    item.quantity
-                  } = ₱${(item.price * item.quantity).toFixed(2)}`}
+                  primary={
+                    <Box
+                      component="span"
+                      sx={{ display: "flex", alignItems: "center" }}
+                    >
+                      {item.name}
+                      {item.is_free_item && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 1,
+                            fontSize: "0.75rem",
+                            backgroundColor: "#388e3c",
+                            color: "white",
+                            px: 0.8,
+                            py: 0.2,
+                            borderRadius: 1,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          FREE
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                  secondary={
+                    item.is_free_item
+                      ? "Reward Item"
+                      : `₱${item.price.toFixed(2)} x ${item.quantity} = ₱${(
+                          item.price * item.quantity
+                        ).toFixed(2)}`
+                  }
                 />
               </ListItem>
             </Paper>
@@ -130,9 +163,52 @@ const CartSummary = ({
         )}
 
         {appliedReward && (
-          <Alert severity="success" sx={{ mt: 2 }}>
-            Applied Reward: {appliedReward.name} (-₱
-            {appliedReward.pointsNeeded.toFixed(2)})
+          <Alert
+            severity="success"
+            sx={{ mt: 2 }}
+            icon={
+              appliedReward.type === "percentage_discount" ? (
+                <DiscountIcon />
+              ) : appliedReward.type === "free_item" ? (
+                <ShoppingCartIcon />
+              ) : (
+                <CreditScoreIcon />
+              )
+            }
+            action={
+              <IconButton
+                size="small"
+                color="inherit"
+                onClick={() => {
+                  // Remove the reward and any associated free items
+                  if (appliedReward.type === "free_item") {
+                    // This function should be passed from PosPage
+                    onRemoveReward();
+                  } else {
+                    onRemoveReward();
+                  }
+                }}
+              >
+                <RemoveIcon fontSize="small" />
+              </IconButton>
+            }
+          >
+            {appliedReward.type === "percentage_discount" && (
+              <>
+                Applied Reward: {appliedReward.name} ({appliedReward.value}%
+                off)
+              </>
+            )}
+            {appliedReward.type === "free_item" && (
+              <>Applied Reward: {appliedReward.name} (Free item)</>
+            )}
+            {(!appliedReward.type ||
+              appliedReward.type === "fixed_discount") && (
+              <>
+                Applied Reward: {appliedReward.name} (-₱
+                {appliedReward.pointsNeeded.toFixed(2)})
+              </>
+            )}
           </Alert>
         )}
       </List>
@@ -144,10 +220,29 @@ const CartSummary = ({
           <Typography>₱{calculateSubtotal().toFixed(2)}</Typography>
         </Box>
 
-        {appliedReward && calculateDiscount() > 0 && (
+        {appliedReward && (
           <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-            <Typography>Reward Discount:</Typography>
-            <Typography>-₱{calculateDiscount().toFixed(2)}</Typography>
+            {appliedReward.type === "percentage_discount" && (
+              <>
+                <Typography>
+                  Reward Discount ({appliedReward.value}%):
+                </Typography>
+                <Typography>-₱{calculateDiscount().toFixed(2)}</Typography>
+              </>
+            )}
+            {appliedReward.type === "free_item" && (
+              <>
+                <Typography>Free Item Reward:</Typography>
+                <Typography sx={{ color: "success.main" }}>Applied</Typography>
+              </>
+            )}
+            {(!appliedReward.type ||
+              appliedReward.type === "fixed_discount") && (
+              <>
+                <Typography>Reward Discount:</Typography>
+                <Typography>-₱{calculateDiscount().toFixed(2)}</Typography>
+              </>
+            )}
           </Box>
         )}
 

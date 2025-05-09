@@ -146,7 +146,7 @@ export default function Dashboard() {
         <Grid item xs={12} sm={4}>
           <StatsCard
             title="Total Sales"
-            value={`$${totalSales.toLocaleString()}`}
+            value={`₱${totalSales.toLocaleString()}`}
             loading={loading}
           />
         </Grid>

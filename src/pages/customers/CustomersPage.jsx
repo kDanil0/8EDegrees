@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Grid, Tabs, Tab, Paper } from "@mui/material";
+import { Typography, Box, Grid, Tabs, Tab, Paper, Stack } from "@mui/material";
 import CustomerFeedbackCard from "../../components/customers/CustomerFeedbackCard";
 import RecentCustomersTable from "../../components/customers/RecentCustomersTable";
-import EligibleRewardsTable from "../../components/customers/EligibleRewardsTable";
 import RewardsHistoryCard from "../../components/customers/RewardsHistoryCard";
 import PointsExchangeModal from "../../components/customers/PointsExchangeModal";
 import RewardDialog from "../../components/customers/RewardDialog";
 import DiscountManagementCard from "../../components/customers/DiscountManagementCard";
+import RewardManagementCard from "../../components/customers/RewardManagementCard";
+import PointsExchangeCard from "../../components/customers/PointsExchangeCard";
 import axios from "axios";
 
 // Tab Panel component
@@ -250,19 +251,15 @@ export default function CustomersPage() {
               <DiscountManagementCard />
             </Grid>
 
-            {/* Rewards */}
+            {/* Right Column */}
             <Grid item xs={12} md={6}>
-              <EligibleRewardsTable
-                rewards={rewards}
-                page={rewardsTablePage}
-                rowsPerPage={5}
-                onPageChange={handleChangeRewardsTablePage}
-                onRowsPerPageChange={(event) =>
-                  handleChangeRowsPerPage(event, "rewards")
-                }
-                onAddRewardClick={() => setRewardDialogOpen(true)}
-                onPointsRateClick={() => setPointsRateModalOpen(true)}
-              />
+              <Stack spacing={2}>
+                {/* Points Exchange Card */}
+                <PointsExchangeCard />
+
+                {/* Rewards Management */}
+                <RewardManagementCard />
+              </Stack>
             </Grid>
           </Grid>
         </TabPanel>

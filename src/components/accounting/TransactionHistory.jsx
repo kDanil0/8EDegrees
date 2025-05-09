@@ -66,7 +66,9 @@ const TransactionHistory = () => {
       });
 
       const data = await accountingService.getTransactions(activeFilters);
-      setTransactions(data);
+      // Sort by ID in descending order (newest to oldest)
+      const sortedData = [...data].sort((a, b) => b.id - a.id);
+      setTransactions(sortedData);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {

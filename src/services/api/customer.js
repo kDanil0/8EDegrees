@@ -1,5 +1,5 @@
 import api from './api';
-import { ENDPOINTS, getDiscountEndpoint } from '../../config/api';
+import { ENDPOINTS, getDiscountEndpoint, getRewardEndpoint } from '../../config/api';
 
 export const customerService = {
   // Customers
@@ -166,6 +166,57 @@ export const customerService = {
       return response.data;
     } catch (error) {
       console.error(`Error deleting discount ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Rewards Management
+  getRewards: async () => {
+    try {
+      const response = await api.get(ENDPOINTS.REWARDS);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching rewards:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  getActiveRewards: async () => {
+    try {
+      const response = await api.get(ENDPOINTS.REWARDS_ACTIVE);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active rewards:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  createReward: async (rewardData) => {
+    try {
+      const response = await api.post(ENDPOINTS.REWARDS, rewardData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating reward:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  updateReward: async (id, rewardData) => {
+    try {
+      const response = await api.put(getRewardEndpoint(id), rewardData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating reward ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  deleteReward: async (id) => {
+    try {
+      const response = await api.delete(getRewardEndpoint(id));
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting reward ${id}:`, error.response?.data || error.message);
       throw error;
     }
   },
