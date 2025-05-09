@@ -14,6 +14,7 @@ import {
 import StatusBadge from "../common/StatusBadge";
 import PropTypes from "prop-types";
 import { accountingService } from "../../services/api";
+import { inventoryService } from "../../services/api";
 
 // Demo data for fallback if API fails
 const DEMO_TOP_PRODUCTS = [
@@ -63,29 +64,38 @@ const TopSellingProducts = ({ refresh }) => {
           throw new Error("No products data available");
         }
 
-        // Map the products data to the format expected by our component
-        const formattedProducts = data.products.map((product) => {
-          // Determine which price field to use
-          let price = 0;
-          if (product.average_price !== undefined) {
-            price = product.average_price;
-          } else if (product.total_sales && product.total_quantity) {
-            // Calculate average if needed
-            price = product.total_sales / product.total_quantity;
+        // Get the actual product data for each top selling product to get the real price
+        const productDetails = [];
+        for (const product of data.products) {
+          try {
+            const productData = await inventoryService.getProduct(product.id);
+            productDetails.push({
+              id: product.id,
+              name: product.name,
+              category: product.category_name,
+              stock: product.total_quantity, // This is units sold
+              price: productData.price, // Use the actual product price
+              status: "In Stock", // Always set to "In Stock" for top selling products
+            });
+          } catch (err) {
+            console.error(
+              `Error fetching details for product ${product.id}:`,
+              err
+            );
+            // If we can't get the product details, use what we have from the sales data
+            productDetails.push({
+              id: product.id,
+              name: product.name,
+              category: product.category_name,
+              stock: product.total_quantity,
+              price: 0, // Default price if we can't get the real one
+              status: "In Stock",
+            });
           }
+        }
 
-          return {
-            id: product.id,
-            name: product.name,
-            category: product.category_name,
-            stock: product.total_quantity, // This is actually units sold, not current stock
-            price: price,
-            status: "In Stock", // We don't have stock status in this API, so default to "In Stock"
-          };
-        });
-
-        console.log("Formatted products:", formattedProducts);
-        setProducts(formattedProducts);
+        console.log("Formatted products with actual prices:", productDetails);
+        setProducts(productDetails);
       } catch (error) {
         console.error("Error fetching top selling products:", error);
         console.log("Using demo data for top selling products");
