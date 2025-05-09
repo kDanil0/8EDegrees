@@ -1,4 +1,5 @@
 import api from './api';
+import { ENDPOINTS, getDiscountEndpoint } from '../../config/api';
 
 export const customerService = {
   // Customers
@@ -92,7 +93,82 @@ export const customerService = {
       console.error('Get feedback error:', error.response?.data || error.message);
       throw error;
     }
-  }
+  },
+  
+  // System Configuration
+  getPointsExchangeRate: async () => {
+    try {
+      const response = await api.get('/customer/config/points-exchange-rate');
+      return response.data;
+    } catch (error) {
+      console.error('Get points exchange rate error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  
+  updatePointsExchangeRate: async ({ php_amount, points }) => {
+    try {
+      const response = await api.put('/customer/config/points-exchange-rate', { 
+        php_amount, 
+        points 
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Update points exchange rate error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Discount Methods
+  getDiscounts: async () => {
+    try {
+      const response = await api.get(ENDPOINTS.DISCOUNTS);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching discounts:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  getActiveDiscounts: async () => {
+    try {
+      const response = await api.get(ENDPOINTS.ACTIVE_DISCOUNTS);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active discounts:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  createDiscount: async (discountData) => {
+    try {
+      const response = await api.post(ENDPOINTS.DISCOUNTS, discountData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating discount:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  updateDiscount: async (id, discountData) => {
+    try {
+      const response = await api.put(getDiscountEndpoint(id), discountData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating discount ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  deleteDiscount: async (id) => {
+    try {
+      const response = await api.delete(getDiscountEndpoint(id));
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting discount ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
 };
 
 export default customerService; 

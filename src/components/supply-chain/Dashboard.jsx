@@ -103,8 +103,8 @@ export default function Dashboard() {
             : "N/A",
           supplier: po.supplier ? po.supplier.name : "N/A",
           amount: po.totalAmount
-            ? `$${parseFloat(po.totalAmount).toFixed(2)}`
-            : "$0.00",
+            ? `₱${parseFloat(po.totalAmount).toFixed(2)}`
+            : "₱0.00",
         }));
         setPendingPurchases(approvedWithDetails);
 
@@ -219,7 +219,7 @@ export default function Dashboard() {
                     <TableCell>{po.received_quantity || 0}</TableCell>
                     <TableCell>{po.rejected_quantity || 0}</TableCell>
                     <TableCell>
-                      ${parseFloat(po.total_price || 0).toFixed(2)}
+                      ₱{parseFloat(po.total_price || 0).toFixed(2)}
                     </TableCell>
                     <TableCell>{po.date_received || "N/A"}</TableCell>
                   </TableRow>

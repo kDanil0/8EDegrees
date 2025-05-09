@@ -107,12 +107,11 @@ const TopSellingProducts = ({ refresh }) => {
   };
 
   // Function to format price
-  const formatPrice = (price) => {
-    // Handle null, undefined or non-numeric values
-    if (price === null || price === undefined || isNaN(parseFloat(price))) {
-      return "$0.00";
+  const formatCurrency = (price) => {
+    if (!price || isNaN(parseFloat(price))) {
+      return "₱0.00";
     }
-    return `$${parseFloat(price).toFixed(2)}`;
+    return `₱${parseFloat(price).toFixed(2)}`;
   };
 
   return (
@@ -217,7 +216,7 @@ const TopSellingProducts = ({ refresh }) => {
                       {product.stock}
                     </TableCell>
                     <TableCell align="center" sx={{ py: 1.5 }}>
-                      {formatPrice(product.price)}
+                      {formatCurrency(product.price)}
                     </TableCell>
                     <TableCell align="center" sx={{ py: 1.5 }}>
                       <StatusBadge status={product.status} />

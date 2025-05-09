@@ -405,8 +405,8 @@ export default function PurchaseOrders() {
                         <TableRow key={index}>
                           <TableCell>{item.product_name}</TableCell>
                           <TableCell>{item.quantity}</TableCell>
-                          <TableCell>${item.unit_price.toFixed(2)}</TableCell>
-                          <TableCell>${item.total_price.toFixed(2)}</TableCell>
+                          <TableCell>₱{item.unit_price.toFixed(2)}</TableCell>
+                          <TableCell>₱{item.total_price.toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -427,7 +427,7 @@ export default function PurchaseOrders() {
                     Total Order Amount:
                   </Typography>
                   <Typography variant="subtitle1" fontWeight="bold">
-                    $
+                    ₱
                     {orderItems
                       .reduce((total, item) => total + item.total_price, 0)
                       .toFixed(2)}
@@ -521,10 +521,10 @@ export default function PurchaseOrders() {
                           </TableCell>
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell>
-                            ${parseFloat(item.unit_price).toFixed(2)}
+                            ₱{parseFloat(item.unit_price).toFixed(2)}
                           </TableCell>
                           <TableCell>
-                            ${parseFloat(item.total_price).toFixed(2)}
+                            ₱{parseFloat(item.total_price).toFixed(2)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -546,7 +546,7 @@ export default function PurchaseOrders() {
                   Total Amount:
                 </Typography>
                 <Typography variant="subtitle1" fontWeight="bold">
-                  ${parseFloat(selectedPO.totalAmount).toFixed(2)}
+                  ₱{parseFloat(selectedPO.totalAmount).toFixed(2)}
                 </Typography>
               </Box>
             </Box>

@@ -41,31 +41,31 @@ const DailySales = () => {
       const formattedData = [
         {
           title: "Total Sales",
-          value: parseFloat(response.total_sales).toLocaleString(),
+          value: `₱${parseFloat(response.total_sales).toLocaleString()}`,
         },
         {
           title: "Cash Sales",
-          value: parseFloat(response.cash_sales).toLocaleString(),
+          value: `₱${parseFloat(response.cash_sales).toLocaleString()}`,
         },
         {
           title: "Cash In",
-          value: parseFloat(response.cash_in).toLocaleString(),
+          value: `₱${parseFloat(response.cash_in).toLocaleString()}`,
         },
         {
           title: "Cash Out",
-          value: parseFloat(response.cash_out).toLocaleString(),
+          value: `₱${parseFloat(response.cash_out).toLocaleString()}`,
         },
         {
           title: "Expected Cash in Drawer",
-          value: parseFloat(response.expected_cash).toLocaleString(),
+          value: `₱${parseFloat(response.expected_cash).toLocaleString()}`,
         },
         {
           title: "Cash Count",
-          value: parseFloat(response.cash_count).toLocaleString(),
+          value: `₱${parseFloat(response.cash_count).toLocaleString()}`,
         },
         {
           title: "Short / Over",
-          value: parseFloat(response.short_over).toLocaleString(),
+          value: `₱${parseFloat(response.short_over).toLocaleString()}`,
         },
       ];
 
@@ -79,13 +79,13 @@ const DailySales = () => {
     } catch (error) {
       console.error("Error fetching daily sales:", error);
       setSalesData([
-        { title: "Total Sales", value: "0" },
-        { title: "Cash Sales", value: "0" },
-        { title: "Cash In", value: "0" },
-        { title: "Cash Out", value: "0" },
-        { title: "Expected Cash in Drawer", value: "0" },
-        { title: "Cash Count", value: "0" },
-        { title: "Short / Over", value: "0" },
+        { title: "Total Sales", value: "₱0" },
+        { title: "Cash Sales", value: "₱0" },
+        { title: "Cash In", value: "₱0" },
+        { title: "Cash Out", value: "₱0" },
+        { title: "Expected Cash in Drawer", value: "₱0" },
+        { title: "Cash Count", value: "₱0" },
+        { title: "Short / Over", value: "₱0" },
       ]);
     } finally {
       setLoading(false);
@@ -205,9 +205,16 @@ const DailySales = () => {
                     }
                     sx={{
                       color:
-                        item.title === "Short / Over" &&
-                        parseFloat(item.value) < 0
-                          ? "#d32f2f"
+                        item.title === "Short / Over"
+                          ? parseFloat(
+                              item.value.replace("₱", "").replace(",", "")
+                            ) < 0
+                            ? "#d32f2f" // Red for short (negative)
+                            : parseFloat(
+                                item.value.replace("₱", "").replace(",", "")
+                              ) > 0
+                            ? "#2e7d32" // Green for over (positive)
+                            : "inherit"
                           : "inherit",
                     }}
                   >

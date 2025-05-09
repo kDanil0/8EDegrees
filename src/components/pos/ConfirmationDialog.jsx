@@ -1,12 +1,12 @@
-import React, { useRef } from "react";
+import React from "react";
 import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogTitle,
   Button,
   Typography,
   Box,
-  Paper,
   Divider,
   Table,
   TableBody,
@@ -14,106 +14,60 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Paper,
   Chip,
 } from "@mui/material";
-import PrintIcon from "@mui/icons-material/Print";
-import DownloadIcon from "@mui/icons-material/Download";
-import CloseIcon from "@mui/icons-material/Close";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelIcon from "@mui/icons-material/Cancel";
 import PaymentIcon from "@mui/icons-material/Payment";
-import { useReactToPrint } from "react-to-print";
+import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 
 /**
- * Component for displaying and printing e-receipts
+ * Confirmation dialog for finalizing transactions
  */
-const Receipt = ({
+const ConfirmationDialog = ({
   open,
   onClose,
-  transaction,
-  customer,
+  onConfirm,
   cartItems,
   subtotal,
   discount,
   total,
-  pointsEarned,
-  appliedReward,
   tenderedCash,
   change,
+  customer,
+  appliedReward,
   paymentMode,
   referenceNumber,
   selectedDiscount,
 }) => {
-  const receiptRef = useRef();
-  const currentDate = new Date().toLocaleString();
-
   // Calculate the percentage discount amount if a discount is selected
   const percentageDiscountAmount = selectedDiscount
     ? (subtotal * selectedDiscount.percentage) / 100
     : 0;
 
-  // Handle print functionality
-  const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
-    documentTitle: `Receipt-${transaction?.id || "POS"}`,
-  });
-
-  if (!open) return null;
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Confirm Order</DialogTitle>
       <DialogContent>
-        {/* Printable receipt content */}
-        <Paper
-          ref={receiptRef}
-          sx={{
-            p: 3,
-            minHeight: "60vh",
-            maxHeight: "70vh",
-            overflow: "auto",
-          }}
-        >
-          <Box sx={{ textAlign: "center", mb: 2 }}>
-            <Typography variant="h5" gutterBottom>
-              8E Degrees
-            </Typography>
-            <Typography variant="body2">123 Main Street, City</Typography>
-            <Typography variant="body2">Tel: (123) 456-7890</Typography>
-            <Typography variant="body2" gutterBottom>
-              {currentDate}
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 2 }}>
-              Receipt #{transaction?.id || "POS-TEMP"}
-            </Typography>
-          </Box>
-
-          <Divider sx={{ my: 2 }} />
-
+        <Box>
+          {/* Customer information if available */}
           {customer && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body1">Customer: {customer.name}</Typography>
+            <Box mb={2}>
+              <Typography variant="subtitle1">
+                Customer: {customer.name}
+              </Typography>
               <Typography variant="body2">
                 Phone: {customer.contactNum}
               </Typography>
-              {pointsEarned > 0 && (
-                <Typography variant="body2" color="primary">
-                  Points Earned: {pointsEarned}
-                </Typography>
-              )}
             </Box>
           )}
 
-          <Divider sx={{ my: 2 }} />
-
           {/* Payment Mode */}
-          <Box
-            sx={{
-              mb: 2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <PaymentIcon sx={{ mr: 1 }} />
-            <Typography variant="body1" sx={{ mr: 1 }}>
+          <Box mb={2} display="flex" alignItems="center">
+            <PaymentIcon sx={{ mr: 1, color: "primary.main" }} />
+            <Typography variant="subtitle1" sx={{ mr: 1 }}>
               Payment Mode:
             </Typography>
             <Chip
@@ -123,18 +77,8 @@ const Receipt = ({
             />
           </Box>
 
-          {/* E-Wallet Reference Number */}
-          {paymentMode === "ewallet" && referenceNumber && (
-            <Box sx={{ mb: 2, textAlign: "center" }}>
-              <Typography variant="body2">
-                Reference #: {referenceNumber}
-              </Typography>
-            </Box>
-          )}
-
-          <Divider sx={{ my: 2 }} />
-
-          <TableContainer component={Paper} elevation={0}>
+          {/* Items */}
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -161,7 +105,8 @@ const Receipt = ({
             </Table>
           </TableContainer>
 
-          <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 1 }}>
+          {/* Order summary */}
+          <Box sx={{ mb: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Subtotal:</Typography>
               <Typography>₱{subtotal.toFixed(2)}</Typography>
@@ -169,7 +114,10 @@ const Receipt = ({
 
             {discount > 0 && appliedReward && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Reward Discount ({appliedReward.name}):</Typography>
+                <Typography>
+                  Reward Discount{" "}
+                  {appliedReward ? `(${appliedReward.name})` : ""}:
+                </Typography>
                 <Typography>-₱{discount.toFixed(2)}</Typography>
               </Box>
             )}
@@ -183,59 +131,85 @@ const Receipt = ({
               </Box>
             )}
 
-            <Divider sx={{ my: 1 }} />
-
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="h6">Total:</Typography>
-              <Typography variant="h6">₱{total.toFixed(2)}</Typography>
+              <Typography variant="subtitle1">Total:</Typography>
+              <Typography variant="subtitle1">₱{total.toFixed(2)}</Typography>
             </Box>
 
-            {/* Payment Information - only show if cash payment */}
+            {/* Show cash details if payment mode is cash */}
             {paymentMode === "cash" && (
-              <Box sx={{ mt: 1 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography>Tendered Cash:</Typography>
+              <>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mt: 1,
+                  }}
+                >
+                  <Box display="flex" alignItems="center">
+                    <CurrencyExchangeIcon
+                      fontSize="small"
+                      sx={{ mr: 1, color: "text.secondary" }}
+                    />
+                    <Typography>Tendered Cash:</Typography>
+                  </Box>
                   <Typography>₱{tenderedCash.toFixed(2)}</Typography>
                 </Box>
+
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography fontWeight="bold">Change:</Typography>
                   <Typography fontWeight="bold">
                     ₱{change.toFixed(2)}
                   </Typography>
                 </Box>
+              </>
+            )}
+
+            {/* Show reference number if payment mode is e-wallet */}
+            {paymentMode === "ewallet" && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 1,
+                }}
+              >
+                <Box display="flex" alignItems="center">
+                  <ReceiptIcon
+                    fontSize="small"
+                    sx={{ mr: 1, color: "text.secondary" }}
+                  />
+                  <Typography>Reference Number:</Typography>
+                </Box>
+                <Typography>{referenceNumber}</Typography>
               </Box>
             )}
           </Box>
-
-          <Box sx={{ mt: 4, textAlign: "center" }}>
-            <Typography variant="body2">
-              Thank you for your purchase!
-            </Typography>
-            <Typography variant="body2">Please come again</Typography>
-          </Box>
-        </Paper>
+        </Box>
       </DialogContent>
       <DialogActions>
-        <Button startIcon={<CloseIcon />} onClick={onClose}>
-          Close
-        </Button>
         <Button
-          startIcon={<DownloadIcon />}
-          onClick={handlePrint}
+          startIcon={<CancelIcon />}
+          onClick={onClose}
+          color="error"
           variant="outlined"
         >
-          Download
+          Cancel
         </Button>
         <Button
-          startIcon={<PrintIcon />}
-          onClick={handlePrint}
+          startIcon={<CheckCircleOutlineIcon />}
+          onClick={onConfirm}
+          color="primary"
           variant="contained"
+          autoFocus
         >
-          Print
+          Confirm Order
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default Receipt;
+export default ConfirmationDialog;

@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Box, Button, Typography, Snackbar, Alert } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  Snackbar,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +23,7 @@ import ProductGrid from "../../components/pos/ProductGrid";
 import CartSummary from "../../components/pos/CartSummary";
 import DialogManager from "../../components/pos/DialogManager";
 import Receipt from "../../components/pos/Receipt";
+import ConfirmationDialog from "../../components/pos/ConfirmationDialog";
 
 export default function PosPage() {
   // Add auth context and navigation
@@ -46,6 +57,19 @@ export default function PosPage() {
   const [lastTransaction, setLastTransaction] = useState(null);
   const [pointsEarned, setPointsEarned] = useState(0);
 
+  // Tendered cash and change
+  const [tenderedCash, setTenderedCash] = useState(0);
+  const [change, setChange] = useState(0);
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+
+  // Payment mode
+  const [paymentMode, setPaymentMode] = useState("cash");
+  const [referenceNumber, setReferenceNumber] = useState("");
+
+  // Discount state
+  const [discounts, setDiscounts] = useState([]);
+  const [selectedDiscount, setSelectedDiscount] = useState(null);
+
   // Load categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
@@ -58,6 +82,20 @@ export default function PosPage() {
     };
 
     fetchCategories();
+  }, []);
+
+  // Load discounts on component mount
+  useEffect(() => {
+    const fetchDiscounts = async () => {
+      try {
+        const data = await posService.getActiveDiscounts();
+        setDiscounts(data);
+      } catch (error) {
+        console.error("Error fetching discounts:", error);
+      }
+    };
+
+    fetchDiscounts();
   }, []);
 
   // Show notification helper
@@ -234,12 +272,93 @@ export default function PosPage() {
     showNotification(`Reward applied: ${reward.name}`, "success");
   };
 
-  // Process order
+  // Handle payment mode change
+  const handlePaymentModeChange = (mode) => {
+    setPaymentMode(mode);
+    // Reset related fields on mode change
+    if (mode === "cash") {
+      setReferenceNumber("");
+    } else {
+      setTenderedCash(0);
+      setChange(0);
+    }
+  };
+
+  // Handle reference number change
+  const handleReferenceNumberChange = (value) => {
+    setReferenceNumber(value);
+  };
+
+  // Handle tendered cash change
+  const handleTenderedCashChange = (value) => {
+    const parsed = parseFloat(value) || 0;
+    setTenderedCash(parsed);
+
+    // Calculate change whenever tendered cash changes
+    const totalAmount = calculateTotal();
+    setChange(Math.max(parsed - totalAmount, 0));
+  };
+
+  // Handle discount selection
+  const handleDiscountChange = (discountId) => {
+    if (!discountId) {
+      setSelectedDiscount(null);
+      return;
+    }
+
+    const discount = discounts.find((d) => d.id === discountId);
+    setSelectedDiscount(discount);
+  };
+
+  // Calculate discount amount
+  const calculateDiscountAmount = () => {
+    if (!selectedDiscount) {
+      return calculateDiscount(); // Use existing reward discount if no percentage discount
+    }
+
+    const subtotal = calculateSubtotal();
+    return (subtotal * selectedDiscount.percentage) / 100;
+  };
+
+  // Process order - Initial handler that validates and shows confirmation
   const handleProcessOrder = async () => {
     if (cartItems.length === 0) {
       showNotification("Cart is empty. Please add items.", "warning");
       return;
     }
+
+    // Validate based on payment mode
+    if (paymentMode === "cash") {
+      // Validate tendered cash
+      const totalAmount = calculateTotal();
+      if (tenderedCash < totalAmount) {
+        showNotification(
+          "Tendered cash must be greater than or equal to the total amount.",
+          "warning"
+        );
+        return;
+      }
+    } else if (paymentMode === "ewallet") {
+      // Validate reference number
+      if (!referenceNumber) {
+        showNotification(
+          "Reference number is required for e-wallet payment.",
+          "warning"
+        );
+        return;
+      }
+    }
+
+    // Open confirmation dialog
+    setConfirmationDialogOpen(true);
+  };
+
+  // Process transaction after confirmation
+  const handleConfirmOrder = async () => {
+    setConfirmationDialogOpen(false);
+
+    // Show processing indication
+    showNotification("Processing transaction...", "info");
 
     try {
       // If a reward is being applied, redeem it first
@@ -250,58 +369,69 @@ export default function PosPage() {
           rewardApplied = true;
         } catch (error) {
           console.error("Error redeeming reward:", error);
-          showNotification("Error applying reward. Please try again.", "error");
-          return; // Stop the process if reward redemption fails
+          showNotification(
+            "Error applying reward, but continuing transaction.",
+            "warning"
+          );
+          // Continue with the transaction despite reward error
         }
       }
 
-      const orderData = {
-        customer_id: customer?.id || null,
+      // Build the transaction data
+      const transactionData = {
         items: cartItems.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           price: item.price,
-          discount: item.discount,
+          discount: item.discount || 0, // Make sure discount is included
         })),
-        is_discount: rewardApplied,
+        subtotal: calculateSubtotal(),
+        discount: calculateDiscount(),
+        total: calculateTotal(),
+        payment_mode: paymentMode,
+        tendered_cash: paymentMode === "cash" ? tenderedCash : 0,
+        reference_number: paymentMode === "ewallet" ? referenceNumber : null,
+        change: paymentMode === "cash" ? change : 0,
+        customer_id: customer ? customer.id : null,
+        reward_id: rewardApplied ? appliedReward.id : null,
+        is_discount: rewardApplied || selectedDiscount !== null, // Updated for both types of discounts
+        discount_id: selectedDiscount ? selectedDiscount.id : null,
       };
 
-      const response = await posService.processTransaction(orderData);
+      // Process the transaction
+      const response = await posService.processTransaction(transactionData);
 
-      // Save transaction data for receipt
+      // Set last transaction and points earned
       setLastTransaction(response.transaction);
-      setPointsEarned(response.points_earned || 0);
+      setPointsEarned(response.pointsEarned || 0);
 
-      // Show receipt first, before trying to refresh customer data
+      // Show receipt
       setReceiptDialogOpen(true);
-      showNotification("Order processed successfully!", "success");
 
-      // Refresh customer data if available (do this after showing the receipt)
-      if (customer?.id && customer?.contactNum) {
+      // Show success notification
+      showNotification("Transaction completed successfully", "success");
+
+      // If customer data was used, refresh points information in the background
+      if (customer && customer.id) {
         try {
-          // Wrap in a setTimeout to avoid blocking the UI
-          setTimeout(async () => {
-            try {
-              const customerResponse = await posService.getCustomerByPhone(
-                customer.contactNum
-              );
-              if (customerResponse && !customerResponse.message) {
-                setCustomer(customerResponse);
-              }
-            } catch (error) {
-              // Just log the error but don't show it to the user
-              // since the main transaction was successful
-              console.log("Could not refresh customer data:", error);
-            }
-          }, 500);
+          const updatedCustomerData = await posService.getCustomerByPhone(
+            customer.contactNum
+          );
+          if (updatedCustomerData && !updatedCustomerData.message) {
+            setCustomer(updatedCustomerData);
+          }
         } catch (error) {
-          // Just log the error but don't show to user
-          console.log("Error setting up customer refresh:", error);
+          // Just log the error but don't show to user since transaction succeeded
+          console.log("Could not refresh customer data:", error);
         }
       }
     } catch (error) {
       console.error("Error processing order:", error);
-      showNotification("Error processing order. Please try again.", "error");
+      // More detailed error message based on what we get from the backend
+      const errorMessage =
+        error.response?.data?.message ||
+        "Error processing order. Please try again.";
+      showNotification(errorMessage, "error");
     }
   };
 
@@ -314,6 +444,11 @@ export default function PosPage() {
     setAppliedReward(null);
     setLastTransaction(null);
     setPointsEarned(0);
+    setTenderedCash(0);
+    setChange(0);
+    setPaymentMode("cash");
+    setReferenceNumber("");
+    setSelectedDiscount(null); // Reset selected discount
 
     // Reset customer data
     setCustomer(null);
@@ -342,8 +477,13 @@ export default function PosPage() {
 
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
-    const discount = calculateDiscount();
-    return Math.max(subtotal - discount, 0);
+    const rewardDiscount = calculateDiscount();
+    const percentageDiscount = selectedDiscount
+      ? (subtotal * selectedDiscount.percentage) / 100
+      : 0;
+
+    // Apply both discounts
+    return Math.max(subtotal - rewardDiscount - percentageDiscount, 0);
   };
 
   const handleLogout = async () => {
@@ -352,84 +492,102 @@ export default function PosPage() {
   };
 
   return (
-    <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       {/* Header */}
       <Box
         sx={{
-          backgroundColor: "#a31515",
-          color: "white",
-          padding: 2,
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          p: 2,
+          backgroundColor: "#a31515",
+          color: "white",
         }}
       >
-        <Typography variant="h4">8E Degrees - POS System</Typography>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {selectedCategory && (
-            <Button
-              startIcon={<ArrowBackIcon />}
-              variant="contained"
-              color="secondary"
-              onClick={handleBackToCategories}
-            >
-              Back to Categories
-            </Button>
-          )}
-          <Button
-            startIcon={<LogoutIcon />}
-            variant="outlined"
-            color="inherit"
-            onClick={handleLogout}
-            sx={{
-              borderColor: "white",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.1)",
-                borderColor: "white",
-              },
-            }}
-          >
-            Logout
-          </Button>
-        </Box>
+        <Typography variant="h4">Point of Sale</Typography>
+        <Button
+          variant="contained"
+          color="inherit"
+          onClick={handleLogout}
+          startIcon={<LogoutIcon />}
+        >
+          Logout
+        </Button>
       </Box>
 
       {/* Main Content */}
       <Box
         sx={{
-          flexGrow: 1,
           display: "flex",
-          flexDirection: "row",
-          height: "calc(100vh - 80px)",
+          flexGrow: 1,
+          overflow: "hidden",
         }}
       >
-        {/* Left Side - Categories/Products */}
+        {/* Product/Category Section */}
         <Box
           sx={{
             width: "70%",
-            padding: 2,
-            backgroundColor: "#f5f5f5",
-            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
-          {!selectedCategory ? (
-            <CategoryGrid
-              categories={categories}
-              onSelectCategory={handleCategorySelect}
-            />
-          ) : (
-            <ProductGrid
-              products={products}
-              onSelectProduct={handleAddToCart}
-            />
-          )}
+          {/* Category/Product Header */}
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: "1px solid #ddd",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {selectedCategory ? (
+              <>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleBackToCategories}
+                  startIcon={<ArrowBackIcon />}
+                  sx={{ mr: 2 }}
+                >
+                  Back
+                </Button>
+                <Typography variant="h6">
+                  {categories.find((cat) => cat.id === selectedCategory)
+                    ?.name || "Products"}
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="h6">MAIN MENU</Typography>
+            )}
+          </Box>
+
+          {/* Category/Product Grids */}
+          <Box sx={{ flexGrow: 1, overflow: "auto", p: 2 }}>
+            {selectedCategory ? (
+              <ProductGrid products={products} onAddToCart={handleAddToCart} />
+            ) : (
+              <CategoryGrid
+                categories={categories}
+                onSelectCategory={handleCategorySelect}
+              />
+            )}
+          </Box>
         </Box>
 
-        {/* Right Side - Cart & Order Summary */}
+        {/* Cart & Checkout Section */}
         <Box
           sx={{
             width: "30%",
-            backgroundColor: "#e0e0e0",
+            borderLeft: "1px solid #ddd",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <CartSummary
@@ -444,9 +602,37 @@ export default function PosPage() {
             calculateSubtotal={calculateSubtotal}
             calculateDiscount={calculateDiscount}
             calculateTotal={calculateTotal}
+            tenderedCash={tenderedCash}
+            onTenderedCashChange={handleTenderedCashChange}
+            change={change}
+            paymentMode={paymentMode}
+            onPaymentModeChange={handlePaymentModeChange}
+            referenceNumber={referenceNumber}
+            onReferenceNumberChange={handleReferenceNumberChange}
+            discounts={discounts}
+            selectedDiscount={selectedDiscount}
+            onDiscountChange={handleDiscountChange}
+            calculateDiscountAmount={calculateDiscountAmount}
           />
         </Box>
       </Box>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       {/* Dialogs */}
       <DialogManager
@@ -463,6 +649,24 @@ export default function PosPage() {
         onApplyReward={handleApplyReward}
       />
 
+      {/* Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={confirmationDialogOpen}
+        onClose={() => setConfirmationDialogOpen(false)}
+        onConfirm={handleConfirmOrder}
+        cartItems={cartItems}
+        subtotal={calculateSubtotal()}
+        discount={calculateDiscount()}
+        total={calculateTotal()}
+        tenderedCash={tenderedCash}
+        change={change}
+        customer={customer}
+        appliedReward={appliedReward}
+        paymentMode={paymentMode}
+        referenceNumber={referenceNumber}
+        selectedDiscount={selectedDiscount}
+      />
+
       {/* Receipt Dialog */}
       <Receipt
         open={receiptDialogOpen}
@@ -475,24 +679,12 @@ export default function PosPage() {
         total={calculateTotal()}
         pointsEarned={pointsEarned}
         appliedReward={appliedReward}
+        tenderedCash={tenderedCash}
+        change={change}
+        paymentMode={paymentMode}
+        referenceNumber={referenceNumber}
+        selectedDiscount={selectedDiscount}
       />
-
-      {/* Enhanced Notification */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          variant="filled"
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

@@ -645,10 +645,10 @@ export default function LogisticsDeliveries() {
                               </TableCell>
                               <TableCell>{item.quantity}</TableCell>
                               <TableCell>
-                                ${parseFloat(item.unit_price).toFixed(2)}
+                                ₱{parseFloat(item.unit_price).toFixed(2)}
                               </TableCell>
                               <TableCell>
-                                ${parseFloat(item.total_price).toFixed(2)}
+                                ₱{parseFloat(item.total_price).toFixed(2)}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -666,7 +666,7 @@ export default function LogisticsDeliveries() {
                       <strong>Order Date:</strong> {selectedPODetails.orderDate}
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Total Amount:</strong> $
+                      <strong>Total Amount:</strong> ₱
                       {parseFloat(selectedPODetails.totalAmount).toFixed(2)}
                     </Typography>
                   </Box>

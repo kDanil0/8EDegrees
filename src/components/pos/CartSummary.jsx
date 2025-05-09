@@ -10,12 +10,26 @@ import {
   Paper,
   IconButton,
   Alert,
+  TextField,
+  InputAdornment,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Select,
+  MenuItem,
+  InputLabel,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CreditScoreIcon from "@mui/icons-material/CreditScore";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import PaymentIcon from "@mui/icons-material/Payment";
+import DiscountIcon from "@mui/icons-material/Discount";
 
 /**
  * Component for displaying the cart summary and order processing
@@ -32,7 +46,24 @@ const CartSummary = ({
   calculateSubtotal,
   calculateDiscount,
   calculateTotal,
+  tenderedCash,
+  onTenderedCashChange,
+  change,
+  paymentMode,
+  onPaymentModeChange,
+  referenceNumber,
+  onReferenceNumberChange,
+  discounts,
+  selectedDiscount,
+  onDiscountChange,
+  calculateDiscountAmount,
 }) => {
+  // Calculate the total discount amount (reward + percentage discount)
+  const totalDiscountAmount = appliedReward ? calculateDiscount() : 0;
+  const percentageDiscountAmount = selectedDiscount
+    ? (calculateSubtotal() * selectedDiscount.percentage) / 100
+    : 0;
+
   return (
     <Box
       sx={{
@@ -83,9 +114,9 @@ const CartSummary = ({
               >
                 <ListItemText
                   primary={item.name}
-                  secondary={`$${item.price.toFixed(2)} x ${
+                  secondary={`₱${item.price.toFixed(2)} x ${
                     item.quantity
-                  } = $${(item.price * item.quantity).toFixed(2)}`}
+                  } = ₱${(item.price * item.quantity).toFixed(2)}`}
                 />
               </ListItem>
             </Paper>
@@ -100,7 +131,7 @@ const CartSummary = ({
 
         {appliedReward && (
           <Alert severity="success" sx={{ mt: 2 }}>
-            Applied Reward: {appliedReward.name} (-$
+            Applied Reward: {appliedReward.name} (-₱
             {appliedReward.pointsNeeded.toFixed(2)})
           </Alert>
         )}
@@ -110,13 +141,22 @@ const CartSummary = ({
       <Box sx={{ padding: 2, borderTop: "1px solid #ccc" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
           <Typography>Subtotal:</Typography>
-          <Typography>${calculateSubtotal().toFixed(2)}</Typography>
+          <Typography>₱{calculateSubtotal().toFixed(2)}</Typography>
         </Box>
 
-        {calculateDiscount() > 0 && (
+        {appliedReward && calculateDiscount() > 0 && (
           <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-            <Typography>Discount:</Typography>
-            <Typography>-${calculateDiscount().toFixed(2)}</Typography>
+            <Typography>Reward Discount:</Typography>
+            <Typography>-₱{calculateDiscount().toFixed(2)}</Typography>
+          </Box>
+        )}
+
+        {selectedDiscount && (
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography>
+              {selectedDiscount.name} ({selectedDiscount.percentage}%):
+            </Typography>
+            <Typography>-₱{percentageDiscountAmount.toFixed(2)}</Typography>
           </Box>
         )}
 
@@ -124,8 +164,125 @@ const CartSummary = ({
 
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
           <Typography variant="h6">Total:</Typography>
-          <Typography variant="h6">${calculateTotal().toFixed(2)}</Typography>
+          <Typography variant="h6">₱{calculateTotal().toFixed(2)}</Typography>
         </Box>
+
+        {/* Discount Selector */}
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="discount-select-label">
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <DiscountIcon fontSize="small" sx={{ mr: 1 }} />
+              Apply Discount
+            </Box>
+          </InputLabel>
+          <Select
+            labelId="discount-select-label"
+            value={selectedDiscount ? selectedDiscount.id : ""}
+            onChange={(e) => onDiscountChange(e.target.value)}
+            label="Apply Discount"
+            size="small"
+          >
+            <MenuItem value="">
+              <em>No Discount</em>
+            </MenuItem>
+            {discounts.map((discount) => (
+              <MenuItem key={discount.id} value={discount.id}>
+                {discount.name} ({discount.percentage}%)
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Payment Mode Selection */}
+        <FormControl component="fieldset" sx={{ mb: 2, width: "100%" }}>
+          <FormLabel component="legend">Payment Mode</FormLabel>
+          <RadioGroup
+            row
+            value={paymentMode}
+            onChange={(e) => onPaymentModeChange(e.target.value)}
+          >
+            <FormControlLabel value="cash" control={<Radio />} label="Cash" />
+            <FormControlLabel
+              value="ewallet"
+              control={<Radio />}
+              label="E-Wallet"
+            />
+          </RadioGroup>
+        </FormControl>
+
+        {/* Tendered Cash Input (Only shown for cash payment) */}
+        {paymentMode === "cash" && (
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              label="Tendered Cash"
+              type="number"
+              value={tenderedCash || ""}
+              onChange={(e) => onTenderedCashChange(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CurrencyExchangeIcon />
+                  </InputAdornment>
+                ),
+                inputProps: {
+                  min: 0,
+                  step: 0.01,
+                },
+              }}
+              variant="outlined"
+              size="small"
+              placeholder={`Min: ₱${calculateTotal().toFixed(2)}`}
+              error={tenderedCash > 0 && tenderedCash < calculateTotal()}
+              helperText={
+                tenderedCash > 0 && tenderedCash < calculateTotal()
+                  ? "Amount is less than total"
+                  : ""
+              }
+            />
+            {tenderedCash > 0 && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mt: 1,
+                  color: change > 0 ? "success.main" : "text.primary",
+                }}
+              >
+                <Typography fontWeight={change > 0 ? "bold" : "normal"}>
+                  Change:
+                </Typography>
+                <Typography fontWeight={change > 0 ? "bold" : "normal"}>
+                  ₱{change.toFixed(2)}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Reference Number Input (Only shown for e-wallet payment) */}
+        {paymentMode === "ewallet" && (
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              label="Reference Number"
+              type="text"
+              value={referenceNumber || ""}
+              onChange={(e) => onReferenceNumberChange(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ReceiptIcon />
+                  </InputAdornment>
+                ),
+              }}
+              variant="outlined"
+              size="small"
+              placeholder="Enter e-wallet reference number"
+              required
+            />
+          </Box>
+        )}
 
         <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
           <Button
@@ -155,7 +312,13 @@ const CartSummary = ({
           size="large"
           startIcon={<ShoppingCartIcon />}
           onClick={onProcessOrder}
-          disabled={cartItems.length === 0}
+          disabled={
+            cartItems.length === 0 ||
+            (paymentMode === "cash" &&
+              calculateTotal() > 0 &&
+              tenderedCash < calculateTotal()) ||
+            (paymentMode === "ewallet" && !referenceNumber)
+          }
         >
           Process Order
         </Button>

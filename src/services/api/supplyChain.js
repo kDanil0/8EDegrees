@@ -23,6 +23,36 @@ export const supplyChainService = {
     }
   },
 
+  createSupplier: async (supplierData) => {
+    try {
+      const response = await api.post(ENDPOINTS.SUPPLIERS, supplierData);
+      return response.data;
+    } catch (error) {
+      console.error('Create supplier error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  updateSupplier: async (id, supplierData) => {
+    try {
+      const response = await api.put(getSupplierEndpoint(id), supplierData);
+      return response.data;
+    } catch (error) {
+      console.error(`Update supplier ${id} error:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  deleteSupplier: async (id) => {
+    try {
+      const response = await api.delete(getSupplierEndpoint(id));
+      return response.data;
+    } catch (error) {
+      console.error(`Delete supplier ${id} error:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
   // Purchase Orders
   getPurchaseOrders: async () => {
     try {

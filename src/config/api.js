@@ -45,6 +45,8 @@ export const ENDPOINTS = {
   FIND_OR_CREATE_CUSTOMER: `${API_BASE_URL}/api/customer/customers/find-or-create`,
   SEARCH_CUSTOMER: `${API_BASE_URL}/api/customer/customers/search`,
   REWARDS: `${API_BASE_URL}/api/customer/rewards`,
+  DISCOUNTS: `${API_BASE_URL}/api/customer/discounts`,
+  ACTIVE_DISCOUNTS: `${API_BASE_URL}/api/customer/discounts-active`,
   
   // Accounting Reports
   DAILY_SALES: `${API_BASE_URL}/api/accounting/reports/sales/daily`,
@@ -89,6 +91,9 @@ export const getRedeemRewardEndpoint = (customerId) => `${getCustomerEndpoint(cu
 // Helper function to get products by category endpoint
 export const getProductsByCategoryEndpoint = (categoryId) => `${getCategoryEndpoint(categoryId)}/products`;
 
+// Helper function to get discount endpoint with ID
+export const getDiscountEndpoint = (id) => `${ENDPOINTS.DISCOUNTS}/${id}`;
+
 export default {
   API_BASE_URL,
   ENDPOINTS,
@@ -102,5 +107,6 @@ export default {
   getCustomerEndpoint,
   getAvailableRewardsEndpoint,
   getRedeemRewardEndpoint,
-  getProductsByCategoryEndpoint
+  getProductsByCategoryEndpoint,
+  getDiscountEndpoint
 }; 

@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import AddIcon from "@mui/icons-material/Add";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 const EligibleRewardsTable = ({
   rewards,
@@ -23,6 +24,7 @@ const EligibleRewardsTable = ({
   onPageChange,
   onRowsPerPageChange,
   onAddRewardClick,
+  onPointsRateClick,
 }) => {
   return (
     <Paper
@@ -56,14 +58,25 @@ const EligibleRewardsTable = ({
         >
           Rewards
         </Typography>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={onAddRewardClick}
-        >
-          Add Reward
-        </Button>
+        <Box>
+          <Button
+            color="primary"
+            startIcon={<SettingsIcon />}
+            onClick={onPointsRateClick}
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            Points Rate
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={onAddRewardClick}
+          >
+            Add Reward
+          </Button>
+        </Box>
       </Box>
 
       <TableContainer sx={{ flexGrow: 1 }}>

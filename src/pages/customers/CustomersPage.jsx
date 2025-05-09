@@ -1,13 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Grid } from "@mui/material";
+import { Typography, Box, Grid, Tabs, Tab, Paper } from "@mui/material";
 import CustomerFeedbackCard from "../../components/customers/CustomerFeedbackCard";
 import RecentCustomersTable from "../../components/customers/RecentCustomersTable";
 import EligibleRewardsTable from "../../components/customers/EligibleRewardsTable";
 import RewardsHistoryCard from "../../components/customers/RewardsHistoryCard";
+import PointsExchangeModal from "../../components/customers/PointsExchangeModal";
 import RewardDialog from "../../components/customers/RewardDialog";
+import DiscountManagementCard from "../../components/customers/DiscountManagementCard";
 import axios from "axios";
 
+// Tab Panel component
+const TabPanel = ({ children, value, index, ...other }) => {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`customer-management-tabpanel-${index}`}
+      aria-labelledby={`customer-management-tab-${index}`}
+      style={{ height: "100%" }}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 0, height: "100%" }}>{children}</Box>}
+    </div>
+  );
+};
+
 export default function CustomersPage() {
+  // State for tabs
+  const [tabValue, setTabValue] = useState(0);
+
   // State for pagination
   const [feedbackPage, setFeedbackPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
@@ -22,8 +43,9 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [feedbackLoading, setFeedbackLoading] = useState(true);
 
-  // State for the reward dialog
+  // State for dialogs
   const [rewardDialogOpen, setRewardDialogOpen] = useState(false);
+  const [pointsRateModalOpen, setPointsRateModalOpen] = useState(false);
 
   useEffect(() => {
     // Fetch customers
@@ -50,7 +72,15 @@ export default function CustomersPage() {
       const response = await axios.get(
         "http://localhost:8000/api/customer/rewards"
       );
-      setRewards(response.data);
+      console.log("Rewards data:", response.data);
+
+      // Ensure rewards have the correct field name for points
+      const formattedRewards = response.data.map((reward) => ({
+        ...reward,
+        pointsNeeded: reward.points_required || reward.pointsNeeded || 0,
+      }));
+
+      setRewards(formattedRewards);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching rewards:", error);
@@ -125,8 +155,19 @@ export default function CustomersPage() {
     setRewardsTablePage(newPage);
   };
 
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
   return (
-    <Box sx={{ width: "100%", height: "100%" }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Typography
         variant="h4"
         sx={{ mb: 2, textAlign: "left", fontWeight: "bold" }}
@@ -134,39 +175,45 @@ export default function CustomersPage() {
         Customer Management
       </Typography>
 
-      <Grid
-        container
-        spacing={2}
-        sx={{
-          height: "calc(100% - 50px)",
-          width: "100%",
-        }}
-      >
-        {/* Left column - Feedback & History - Width increased */}
-        <Grid item xs={12} md={6} lg={6}>
-          <Grid container spacing={2} direction="column">
+      {/* Tabs */}
+      <Paper sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          textColor="primary"
+          indicatorColor="primary"
+        >
+          <Tab label="Feedback" />
+          <Tab label="Discounts" />
+        </Tabs>
+      </Paper>
+
+      {/* Tab Content Container */}
+      <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
+        {/* Feedback Tab */}
+        <TabPanel value={tabValue} index={0}>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              height: "100%",
+              width: "100%",
+            }}
+          >
+            {/* Customer Feedback - Full Width */}
             <Grid item xs={12}>
               <CustomerFeedbackCard
                 feedbacks={feedbacks}
                 page={feedbackPage}
                 onPageChange={handleChangeFeedbackPage}
                 loading={feedbackLoading}
+                sx={{ typography: "body1" }} // Increase text size for legibility
               />
             </Grid>
-            <Grid item xs={12}>
-              <RewardsHistoryCard
-                page={historyPage}
-                onPageChange={handleChangeHistoryPage}
-              />
-            </Grid>
-          </Grid>
-        </Grid>
 
-        {/* Right column - Tables - Width adjusted */}
-        <Grid item xs={12} md={6} lg={6}>
-          <Grid container spacing={2} direction="column">
-            {/* Recent Customers Table */}
-            <Grid item xs={12}>
+            {/* Bottom Row */}
+            <Grid item xs={12} md={6}>
+              {/* Recent Customers Table */}
               <RecentCustomersTable
                 customers={customers}
                 page={recentTablePage}
@@ -178,28 +225,60 @@ export default function CustomersPage() {
               />
             </Grid>
 
-            {/* Eligible Rewards Table */}
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
+              {/* Rewards History */}
+              <RewardsHistoryCard
+                page={historyPage}
+                onPageChange={handleChangeHistoryPage}
+              />
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        {/* Discounts Tab */}
+        <TabPanel value={tabValue} index={1}>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              height: "100%",
+              width: "100%",
+            }}
+          >
+            {/* Discounts Management */}
+            <Grid item xs={12} md={6}>
+              <DiscountManagementCard />
+            </Grid>
+
+            {/* Rewards */}
+            <Grid item xs={12} md={6}>
               <EligibleRewardsTable
                 rewards={rewards}
                 page={rewardsTablePage}
-                rowsPerPage={4}
+                rowsPerPage={5}
                 onPageChange={handleChangeRewardsTablePage}
                 onRowsPerPageChange={(event) =>
                   handleChangeRowsPerPage(event, "rewards")
                 }
                 onAddRewardClick={() => setRewardDialogOpen(true)}
+                onPointsRateClick={() => setPointsRateModalOpen(true)}
               />
             </Grid>
           </Grid>
-        </Grid>
-      </Grid>
+        </TabPanel>
+      </Box>
 
-      {/* Reward Dialog */}
+      {/* Dialogs */}
       <RewardDialog
         open={rewardDialogOpen}
         onClose={() => setRewardDialogOpen(false)}
         onSubmit={handleAddReward}
+      />
+
+      {/* Points Exchange Rate Modal */}
+      <PointsExchangeModal
+        open={pointsRateModalOpen}
+        onClose={() => setPointsRateModalOpen(false)}
       />
     </Box>
   );

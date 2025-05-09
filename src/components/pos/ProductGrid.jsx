@@ -4,7 +4,7 @@ import { Grid, Card, CardContent, Typography, Box } from "@mui/material";
 /**
  * Component for displaying products in a grid
  */
-const ProductGrid = ({ products, onSelectProduct }) => {
+const ProductGrid = ({ products, onAddToCart }) => {
   return (
     <>
       <Typography variant="h5" sx={{ mb: 2 }}>
@@ -28,7 +28,7 @@ const ProductGrid = ({ products, onSelectProduct }) => {
                     boxShadow: isOutOfStock ? 1 : 3,
                   },
                 }}
-                onClick={() => !isOutOfStock && onSelectProduct(product)}
+                onClick={() => !isOutOfStock && onAddToCart(product)}
               >
                 <CardContent>
                   <Typography variant="h6" noWrap>
@@ -38,7 +38,7 @@ const ProductGrid = ({ products, onSelectProduct }) => {
                     {product.description || "No description"}
                   </Typography>
                   <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                    ${(product.sellingPrice || product.price).toFixed(2)}
+                    ₱{(product.sellingPrice || product.price).toFixed(2)}
                   </Typography>
 
                   {isOutOfStock && (

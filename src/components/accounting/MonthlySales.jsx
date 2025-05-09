@@ -92,7 +92,7 @@ const MonthlySales = () => {
 
   // Format number as currency
   const formatCurrency = (amount) => {
-    return `$${amount.toLocaleString()}`;
+    return `₱${amount.toLocaleString()}`;
   };
 
   // Is the business profitable?

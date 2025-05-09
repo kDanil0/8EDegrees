@@ -3,6 +3,7 @@ import { Typography, Box, Tabs, Tab } from "@mui/material";
 import Dashboard from "../../components/supply-chain/Dashboard";
 import PurchaseOrders from "../../components/supply-chain/PurchaseOrders";
 import LogisticsDeliveries from "../../components/supply-chain/LogisticsDeliveries";
+import SupplierManager from "../../components/supply-chain/SupplierManager";
 
 export default function SupplyChainPage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -16,8 +17,10 @@ export default function SupplyChainPage() {
       case 0:
         return <Dashboard />;
       case 1:
-        return <PurchaseOrders />;
+        return <SupplierManager />;
       case 2:
+        return <PurchaseOrders />;
+      case 3:
         return <LogisticsDeliveries />;
       default:
         return <Dashboard />;
@@ -36,8 +39,11 @@ export default function SupplyChainPage() {
           onChange={handleTabChange}
           indicatorColor="primary"
           textColor="primary"
+          variant="scrollable"
+          scrollButtons="auto"
         >
           <Tab label="Dashboard" />
+          <Tab label="Supplier Management" />
           <Tab label="Purchase Orders" />
           <Tab label="Logistics & Deliveries" />
         </Tabs>

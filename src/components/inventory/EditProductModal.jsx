@@ -307,7 +307,7 @@ const EditProductModal = ({ open, onClose, product, onSave }) => {
                 InputProps={{
                   inputProps: { min: 0, step: 0.01 },
                   startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
+                    <InputAdornment position="start">₱</InputAdornment>
                   ),
                 }}
                 size="medium"

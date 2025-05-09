@@ -325,7 +325,7 @@ const ViewProduct = ({ onClose, refresh }) => {
                       <TableCell>{product.category}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
-                        ${parseFloat(product.price).toFixed(2)}
+                        ₱{parseFloat(product.price).toFixed(2)}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={product.status} />

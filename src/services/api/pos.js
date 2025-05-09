@@ -1,4 +1,5 @@
 import api from './api';
+import { ENDPOINTS } from '../../config/api';
 
 export const posService = {
   // Transactions
@@ -28,6 +29,17 @@ export const posService = {
       return response.data;
     } catch (error) {
       console.error('Process transaction error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Discounts for POS
+  getActiveDiscounts: async () => {
+    try {
+      const response = await api.get(ENDPOINTS.ACTIVE_DISCOUNTS);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active discounts:', error.response?.data || error.message);
       throw error;
     }
   },

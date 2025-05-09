@@ -98,7 +98,7 @@ const ProductDetailsModal = ({ open, onClose, product, onEdit, onDelete }) => {
               </Box>
             </Box>
             <Typography variant="h5" fontWeight="bold" color="primary">
-              ${parseFloat(product.price).toFixed(2)}
+              ₱{parseFloat(product.price).toFixed(2)}
             </Typography>
           </Box>
 
