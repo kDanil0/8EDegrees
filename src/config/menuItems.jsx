@@ -4,6 +4,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import PeopleIcon from "@mui/icons-material/People";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
 export const menuItems = [
   {
@@ -30,5 +31,11 @@ export const menuItems = [
     text: "POS",
     path: "/pos",
     icon: <PointOfSaleIcon fontSize="small" />,
+  },
+  {
+    text: "User Management",
+    path: "/users",
+    icon: <AdminPanelSettingsIcon fontSize="small" />,
+    adminOnly: true,
   },
 ];

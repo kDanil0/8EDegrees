@@ -15,6 +15,7 @@ import AccountingPage from "./pages/accounting/AccountingPage";
 import CustomersPage from "./pages/customers/CustomersPage";
 import FeedbackPage from "./pages/customers/FeedbackPage";
 import LoginPage from "./pages/auth/LoginPage";
+import UserManagement from "./pages/users/UserManagement";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/accounting" element={<AccountingPage />} />
             <Route path="/supply-chain" element={<SupplyChainPage />} />
             <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/users" element={<UserManagement />} />
           </Route>
         </Route>
 

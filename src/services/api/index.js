@@ -4,6 +4,7 @@ import customerService from './customer';
 import posService from './pos';
 import supplyChainService from './supplyChain';
 import accountingService from './accounting';
+import userManagementService from './userManagement';
 
 // Export all API services
 export {
@@ -12,5 +13,6 @@ export {
   customerService,
   posService,
   supplyChainService,
-  accountingService
+  accountingService,
+  userManagementService
 }; 

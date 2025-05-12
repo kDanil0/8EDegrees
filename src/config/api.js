@@ -58,6 +58,9 @@ export const ENDPOINTS = {
   SALES_SUMMARY: `${API_BASE_URL}/api/accounting/reports/sales/summary`,
   CASH_DRAWER: `${API_BASE_URL}/api/accounting/cash-drawer`,
   TRANSACTION_HISTORY: `${API_BASE_URL}/api/accounting/transactions`,
+  
+  // User Management
+  USERS: `${API_BASE_URL}/api/users`,
 };
 
 // Helper function to get product endpoint with ID
@@ -108,6 +111,9 @@ export const getDiscountEndpoint = (id) => `${ENDPOINTS.DISCOUNTS}/${id}`;
 // Helper function to get reward endpoint with ID
 export const getRewardEndpoint = (id) => `${ENDPOINTS.REWARDS}/${id}`;
 
+// Helper function to get user endpoint with ID
+export const getUserEndpoint = (id) => `${ENDPOINTS.USERS}/${id}`;
+
 export default {
   API_BASE_URL,
   ENDPOINTS,
@@ -126,5 +132,6 @@ export default {
   getRedeemRewardEndpoint,
   getProductsByCategoryEndpoint,
   getDiscountEndpoint,
-  getRewardEndpoint
+  getRewardEndpoint,
+  getUserEndpoint
 }; 

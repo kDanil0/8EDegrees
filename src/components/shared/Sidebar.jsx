@@ -18,7 +18,7 @@ const drawerWidth = 240;
 
 export default function Sidebar() {
   const location = useLocation();
-  const { logout } = useContext(AuthContext);
+  const { logout, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   // Check if current location is in customer section
@@ -69,67 +69,71 @@ export default function Sidebar() {
           </Typography>
         </Box>
         <List sx={{ px: 1 }}>
-          {menuItems.map((item) => (
-            <ListItem
-              key={item.text}
-              button
-              component={Link}
-              to={item.path}
-              selected={
-                item.path === "/customers"
-                  ? isCustomerSection
-                  : location.pathname === item.path
-              }
-              sx={{
-                py: 1.5,
-                px: 2,
-                my: 0.5,
-                borderRadius: 1,
-                color: "text.primary",
-                backgroundColor:
-                  (item.path === "/customers" && isCustomerSection) ||
-                  location.pathname === item.path
-                    ? "#a31515"
-                    : "inherit",
-                transition: "all 0.2s ease-in-out",
-                "&:hover": {
+          {menuItems
+            .filter(
+              (item) => !item.adminOnly || (user && user.role === "admin")
+            )
+            .map((item) => (
+              <ListItem
+                key={item.text}
+                button
+                component={Link}
+                to={item.path}
+                selected={
+                  item.path === "/customers"
+                    ? isCustomerSection
+                    : location.pathname === item.path
+                }
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  my: 0.5,
+                  borderRadius: 1,
+                  color: "text.primary",
                   backgroundColor:
                     (item.path === "/customers" && isCustomerSection) ||
                     location.pathname === item.path
                       ? "#a31515"
-                      : "rgba(163, 21, 21, 0.1)",
-                  transform: "translateX(4px)",
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                },
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                  color:
-                    (item.path === "/customers" && isCustomerSection) ||
-                    location.pathname === item.path
-                      ? "#fff"
-                      : "#a31515",
-                  transition: "all 0.2s",
+                      : "inherit",
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    backgroundColor:
+                      (item.path === "/customers" && isCustomerSection) ||
+                      location.pathname === item.path
+                        ? "#a31515"
+                        : "rgba(163, 21, 21, 0.1)",
+                    transform: "translateX(4px)",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                  },
                 }}
               >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color:
-                    (item.path === "/customers" && isCustomerSection) ||
-                    location.pathname === item.path
-                      ? "#fff"
-                      : "inherit",
-                }}
-              />
-            </ListItem>
-          ))}
+                <ListItemIcon
+                  sx={{
+                    minWidth: 40,
+                    color:
+                      (item.path === "/customers" && isCustomerSection) ||
+                      location.pathname === item.path
+                        ? "#fff"
+                        : "#a31515",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color:
+                      (item.path === "/customers" && isCustomerSection) ||
+                      location.pathname === item.path
+                        ? "#fff"
+                        : "inherit",
+                  }}
+                />
+              </ListItem>
+            ))}
         </List>
 
         {/* Spacer to push logout to bottom */}

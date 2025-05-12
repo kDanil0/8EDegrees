@@ -14,12 +14,16 @@ const api = axios.create({
   withCredentials: false
 });
 
-// Request interceptor for logging
+// Request interceptor for adding auth token and logging
 api.interceptors.request.use(
   (config) => {
-    console.log('API Request to:', config.url);
+    // Add auth token from localStorage if available
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
     
-    // Log request details for debugging
+    console.log('API Request to:', config.url);
     console.log('Request headers:', JSON.stringify(config.headers));
     
     return config;
@@ -39,6 +43,12 @@ api.interceptors.response.use(
   (error) => {
     // For debugging issues
     console.error('API Error:', error);
+    
+    // Handle auth errors
+    if (error.response && error.response.status === 401) {
+      console.log('Unauthorized request. Redirecting to login...');
+      // Could redirect to login or dispatch an event
+    }
     
     return Promise.reject(error);
   }
