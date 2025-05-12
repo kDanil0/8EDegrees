@@ -7,6 +7,7 @@ import AddProduct from "./AddProduct";
 import ViewProduct from "./ViewProduct";
 import StatsCard from "./StatsCard";
 import { inventoryService, accountingService } from "../../services/api";
+import CategoriesModal from "./CategoriesModal";
 
 export default function Dashboard() {
   const [totalSales, setTotalSales] = useState(0);
@@ -16,17 +17,26 @@ export default function Dashboard() {
   const [showViewProduct, setShowViewProduct] = useState(false);
   const [refreshProducts, setRefreshProducts] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
 
   useEffect(() => {
     const fetchBasicDashboardData = async () => {
       try {
         setLoading(true);
 
+        // Get current year and month
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+
         // Parallel fetch for product data, sales data, and product usage data
-        const [products, productUsage] = await Promise.allSettled([
-          inventoryService.getProducts(),
-          accountingService.getProductUsageReport(),
-        ]);
+        const [products, monthlySales, productUsage] = await Promise.allSettled(
+          [
+            inventoryService.getProducts(),
+            accountingService.getMonthlySales(currentYear, currentMonth),
+            accountingService.getProductUsageReport(),
+          ]
+        );
 
         // Handle product data (for current stock)
         if (products.status === "fulfilled") {
@@ -40,40 +50,32 @@ export default function Dashboard() {
           setCurrentStock(0);
         }
 
+        // Handle monthly sales data for total sales
+        if (monthlySales.status === "fulfilled") {
+          console.log("Monthly sales data:", monthlySales.value);
+          setTotalSales(monthlySales.value.total_sales || 0);
+        } else {
+          console.error("Error fetching monthly sales:", monthlySales.reason);
+          setTotalSales(0);
+        }
+
         // Handle product usage data for total units sold
         if (
           productUsage.status === "fulfilled" &&
           productUsage.value.products
         ) {
-          // Debug product usage data
-          console.log("Product usage data:", productUsage.value);
-
           // Calculate the total quantity from all products
           const totalQuantity = productUsage.value.products.reduce(
-            (sum, product) => {
-              console.log(
-                `Product: ${product.name}, Quantity: ${product.total_quantity}`
-              );
-              return sum + Number(product.total_quantity || 0);
-            },
+            (sum, product) => sum + Number(product.total_quantity || 0),
             0
           );
           console.log("Calculated units sold:", totalQuantity);
           setUnitSold(totalQuantity);
-
-          // For total sales, we can calculate from product usage data too
-          const totalSalesAmount = productUsage.value.products.reduce(
-            (sum, product) => sum + Number(product.total_amount || 0),
-            0
-          );
-          console.log("Calculated total sales:", totalSalesAmount);
-          setTotalSales(totalSalesAmount);
         } else {
           console.error("Error fetching product usage:", productUsage.reason);
           // Use demo data for testing
-          console.log("Using demo data for units sold and sales");
+          console.log("Using demo data for units sold");
           setUnitSold(157);
-          setTotalSales(8250.75);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -107,6 +109,17 @@ export default function Dashboard() {
           </Typography>
         </Box>
         <Box>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#a31515",
+              mr: 2,
+              "&:hover": { backgroundColor: "#7a1010" },
+            }}
+            onClick={() => setShowCategoriesModal(true)}
+          >
+            Categories
+          </Button>
           <Button
             variant="contained"
             sx={{
@@ -223,6 +236,11 @@ export default function Dashboard() {
           />
         </Box>
       </Drawer>
+
+      <CategoriesModal
+        open={showCategoriesModal}
+        onClose={() => setShowCategoriesModal(false)}
+      />
     </Box>
   );
 }
